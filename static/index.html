@@ -1,0 +1,395 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ELEVEN S1.1.10.0</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 Vazirmatn,Tahoma,sans-serif;background:#0b1219;color:#e8eef4;display:flex;height:100vh;overflow:hidden}
+aside{width:340px;min-width:300px;background:#121c27;border-left:1px solid #1e2d3d;padding:12px;overflow:auto}
+main{flex:1;display:flex;flex-direction:column}#canvas{flex:1;min-height:0}header{padding:10px 14px;background:#0f1822;border-bottom:1px solid #1e2d3d;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,.btn{background:#1c3348;color:#e8eef4;border:1px solid #2a4a66;border-radius:8px;padding:8px 12px;cursor:pointer}
+button.primary{background:#1f6feb;border-color:#1f6feb}button.danger{background:#8b2e2e;border-color:#8b2e2e}button:disabled{opacity:.45;cursor:not-allowed}
+.field{display:flex;flex-direction:column;gap:4px;margin:8px 0}.field span{color:#9db0c3;font-size:12px}
+input,select{background:#0b1219;color:#e8eef4;border:1px solid #2a4a66;border-radius:6px;padding:7px 8px}
+.section{margin:12px 0;padding-top:8px;border-top:1px solid #1e2d3d}.section h3{margin:0 0 8px;font-size:13px;color:#7eb6ff}
+.card{background:#0b1219;border:1px solid #1e2d3d;border-radius:8px;padding:8px;white-space:pre-wrap;font-size:12px;color:#c5d4e3}
+#status{flex:1;color:#9db0c3;font-size:12px}label.row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+.views{display:flex;flex-wrap:wrap;gap:4px}.views button{padding:4px 8px;font-size:12px}
+</style>
+</head>
+<body>
+<aside>
+  <h2 style="margin:0 0 8px;font-size:16px">ELEVEN S1.1.10.0</h2>
+  <div class="section"><h3>مدل</h3>
+    <button id="openBtn" class="primary" style="width:100%">باز کردن STL</button>
+    <input id="file" type="file" accept=".stl" hidden/>
+    <label class="row"><input id="isolateSubject" type="checkbox" checked/> حذف اجزای جدا / واترمارک</label>
+  </div>
+  <div class="section"><h3>ابعاد نهایی (میلی‌متر)</h3>
+    <div class="field"><span>ارتفاع</span><input id="height" type="number" step="0.1" value="100"/></div>
+    <div class="field"><span>عرض</span><input id="width" type="number" step="0.1" value="100"/></div>
+    <div class="field"><span>عمق</span><input id="depth" type="number" step="0.1" value="30"/></div>
+    <label class="row"><input id="lock" type="checkbox" checked/> قفل نسبت ابعاد</label>
+    <button id="applyRec" style="width:100%;margin-top:4px">اعمال پیشنهاد ابعاد</button>
+  </div>
+  <div class="section"><h3>برش</h3>
+    <div class="field"><span>محور برش (جهت دلخواه شما)</span>
+      <select id="sliceAxis"><option value="x">محور X</option><option value="y">محور Y</option><option value="z">محور Z</option></select>
+    </div>
+    <div id="axisMeaning" class="card">—</div>
+    <div class="field"><span>وضوح نمای کلی</span>
+      <select id="quality">
+        <option value="very_low">خیلی پایین — قطعات کمتر</option>
+        <option value="low">پایین</option>
+        <option value="medium" selected>متوسط</option>
+        <option value="high">بالا — جزئیات بیشتر</option>
+      </select>
+    </div>
+    <div id="sliceCountHint" class="card">تعداد برش پس از وارد کردن ابعاد خودکار محاسبه می‌شود.</div>
+    <div class="field"><span>ضخامت ورق</span><input id="thickness" type="number" min="0.5" step="0.1" value="2.6"/></div>
+    <div class="field"><span>فاصله بین قطعات</span>
+      <select id="gapMode"><option value="zero">صفر</option><option value="custom">سفارشی</option></select>
+    </div>
+    <div class="field"><span>فاصله سفارشی</span><input id="gap" type="number" min="0" step="0.1" value="0"/></div>
+    <label class="row"><input id="showPlanes" type="checkbox" checked/> نمایش دقیق صفحه‌های برش</label>
+  </div>
+  <div class="section"><h3>صفحه پشت و خار</h3>
+    <button id="useViewBtn" class="primary" style="width:100%;margin-bottom:8px;font-size:14px;padding:10px">
+      همین نما = جلو دیوارکوب
+    </button>
+    <div class="card" style="margin-bottom:8px;color:#9db0c3">مدل را بچرخانید تا همان نمایی که روی دیوار می‌خواهید روبه‌روی شما باشد، بعد این دکمه را بزنید. محور برش و صفحه پشت خودکار عمود و پشت کار تنظیم می‌شوند.</div>
+    <div class="field"><span>سمت صفحه پشت (معمولاً نیازی به دستکاری نیست)</span>
+      <select id="backFace">
+        <option value="back">عقب</option>
+        <option value="front">جلو</option>
+        <option value="left">چپ</option>
+        <option value="right">راست</option>
+      </select>
+    </div>
+    <div class="field"><span>جابه‌جایی صفحه پشت نسبت به سایز کلی (میلی‌متر)</span>
+      <input id="backOffset" type="number" step="0.5" value="0"/>
+      <span style="font-size:11px;color:#8aa0b5">۰ = روی لبهٔ انتخاب‌شده · مثبت = به داخل مدل · منفی = بیرون از مدل</span>
+    </div>
+    <label class="row"><input id="showBackPlane" type="checkbox" checked/> نمایش صفحه پشت در تصویر سه‌بعدی</label>
+    <label class="row"><input id="forceFlatBack" type="checkbox" checked/> همیشه قاب پشت تخت بساز (مدل‌های باز هم وصل شوند)</label>
+    <div class="field"><span>حداقل عمق مقطع از صفحه پشت (میلی‌متر)</span><input id="minSection" type="number" min="0" step="0.5" value="15"/></div>
+    <div class="field"><span>طول شیار مادگی</span><input id="slotLength" type="number" min="1" step="0.25" value="20"/></div>
+    <div class="field"><span>تعداد خار در هر قطعه</span><input id="tabCount" type="number" min="1" step="1" value="1"/></div>
+    <div class="field"><span>حداقل ضخامت گلوگاه</span><input id="minimumWeb" type="number" min="0" step="0.5" value="4"/></div>
+    <div id="connectorInfo" class="card">مادگی: 20.00 × 2.60 میلی‌متر
+نری هم‌مرکز: 20.25 × 2.60 میلی‌متر
+حداقل مقطع: 15.00 میلی‌متر
+تعداد خار: 1</div>
+  </div>
+  <div class="section"><h3>صفحات موج‌دار (پارامتریک)</h3>
+    <label class="row"><input id="waveEnabled" type="checkbox"/> افزودن صفحات موج‌دار به طرح</label>
+    <div class="card" style="margin-bottom:8px;color:#9db0c3">مدل اصلی دست‌نخورده می‌ماند؛ موج‌ها فقط به‌عنوان صفحات تزئینی کنار / پشت کار اضافه می‌شوند تا ترکیب مدرن و هماهنگ بسازند.</div>
+    <div class="field"><span>محل قرارگیری</span>
+      <select id="wavePlacement">
+        <option value="sides">طرفین (چپ و راست)</option>
+        <option value="left">فقط چپ</option>
+        <option value="right">فقط راست</option>
+        <option value="behind">پشت مدل</option>
+        <option value="frame">قاب چهارطرفه</option>
+      </select>
+    </div>
+    <div class="field"><span>دامنه موج (میلی‌متر)</span><input id="waveAmp" type="number" min="0" step="0.5" value="8"/></div>
+    <div class="field"><span>طول موج λ (میلی‌متر)</span><input id="waveLen" type="number" min="5" step="1" value="40"/></div>
+    <div class="field"><span>جابه‌جایی فاز (درجه)</span><input id="wavePhase" type="number" step="5" value="0"/></div>
+    <div class="field"><span>تعداد نوار</span><input id="waveCount" type="number" min="1" max="12" step="1" value="2"/></div>
+    <div class="field"><span>عرض هر نوار (میلی‌متر)</span><input id="waveStrip" type="number" min="3" step="0.5" value="18"/></div>
+    <div class="field"><span>فاصله از مدل اصلی (میلی‌متر)</span><input id="waveGap" type="number" min="0" step="0.5" value="4"/></div>
+    <div class="field"><span>آفست عمق Y (میلی‌متر)</span><input id="waveOffY" type="number" step="0.5" value="0"/></div>
+    <div class="field"><span>آفست ارتفاع Z (میلی‌متر)</span><input id="waveOffZ" type="number" step="0.5" value="0"/></div>
+    <div class="field"><span>پوشش ارتفاع — از % تا %</span>
+      <div style="display:flex;gap:6px"><input id="waveHMin" type="number" min="0" max="100" step="1" value="0"/><input id="waveHMax" type="number" min="0" max="100" step="1" value="100"/></div>
+    </div>
+    <div id="waveInfo" class="card">موج خاموش — مدل اصلی بدون تغییر.</div>
+  </div>
+  <div class="section"><h3>کراپ و برجسته‌سازی (مثل کورل)</h3>
+    <label class="row"><input id="cropEnabled" type="checkbox"/> فعال‌سازی کراپ ناحیه‌ای</label>
+    <div class="field"><span>عرض — از % تا %</span>
+      <div style="display:flex;gap:6px"><input id="cropWMin" type="number" min="0" max="100" step="1" value="0"/><input id="cropWMax" type="number" min="0" max="100" step="1" value="100"/></div>
+    </div>
+    <div class="field"><span>ارتفاع — از % تا %</span>
+      <div style="display:flex;gap:6px"><input id="cropHMin" type="number" min="0" max="100" step="1" value="0"/><input id="cropHMax" type="number" min="0" max="100" step="1" value="100"/></div>
+    </div>
+    <div class="field"><span>عمق — از % تا %</span>
+      <div style="display:flex;gap:6px"><input id="cropDMin" type="number" min="0" max="100" step="1" value="0"/><input id="cropDMax" type="number" min="0" max="100" step="1" value="100"/></div>
+    </div>
+    <div class="card" style="margin-bottom:8px;color:#9db0c3">کراپ مثل برش محدوده در کورل است: فقط همان درصد از مدل برش زده می‌شود. ۱۰۰٪ = کل مدل.</div>
+    <label class="row"><input id="boldEnabled" type="checkbox"/> برجسته / بولد کردن خط برش بیرونی</label>
+    <div class="field"><span>مقدار افست بولد (میلی‌متر)</span><input id="boldOffset" type="number" min="0" step="0.05" value="0.4"/></div>
+    <div class="card" style="color:#9db0c3">خط بیرونی هر قطعه به اندازهٔ افست به بیرون باز می‌شود تا در برش برجسته‌تر دیده شود.</div>
+  </div>
+  <div class="section"><h3>پیشنهاد هوشمند ورق</h3>
+    <div class="field"><span>عرض ورق</span><input id="sheetW" type="number" step="1" value="600"/></div>
+    <div class="field"><span>ارتفاع ورق</span><input id="sheetH" type="number" step="1" value="400"/></div>
+    <button id="recommendBtn" style="width:100%">پیشنهاد تعداد / مقیاس</button>
+    <div id="recommendBox" class="card">پس از بارگذاری مدل و تنظیم ابعاد، پیشنهاد بگیرید.</div>
+  </div>
+  <div class="section"><h3>کنترل نهایی</h3><div id="validation" class="card">برای کنترل فایل تولیدی، «تولید نهایی» را بزنید.</div></div>
+  <div class="section"><h3>نما</h3><div class="views">
+    <button data-view="fit">فیت</button><button data-view="front">جلو</button><button data-view="back">عقب</button>
+    <button data-view="left">چپ</button><button data-view="right">راست</button><button data-view="top">بالا</button><button data-view="iso">ایزو</button>
+  </div></div>
+</aside>
+<main>
+<header>
+  <button id="finalBtn" class="primary">تولید نهایی</button>
+  <button id="exportBtn" disabled>خروجی DXF</button>
+  <button id="cancelBtn" class="danger" disabled>توقف</button>
+  <div id="status">آماده — پورت مستقل 18231 — صفحات موج‌دار — منطق Stacked Slices مثل Slicer for Fusion · بدون ریست مدل</div>
+  <div id="previewState" style="color:#7eb6ff;font-size:12px"></div>
+</header>
+<div id="canvas"></div>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {STLLoader} from 'three/addons/loaders/STLLoader.js';
+const $=id=>document.getElementById(id), num=id=>Number($(id).value)||0;
+let model=null,modelId=null,original=null,originalSemantic=null,recommended=null,currentJob=null,currentToken=null,finalPlanePositions=null;
+let semanticAxes={height:'z',width:'x',depth:'y'},planes=new THREE.Group(),backPlaneGroup=new THREE.Group();
+const host=$('canvas'),scene=new THREE.Scene();scene.background=new THREE.Color(0x101820);scene.add(planes,backPlaneGroup);
+const camera=new THREE.PerspectiveCamera(42,host.clientWidth/host.clientHeight,.1,100000);camera.up.set(0,0,1);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(host.clientWidth,host.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;host.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.screenSpacePanning=true;
+scene.add(new THREE.HemisphereLight(0xffffff,0x263746,2.1));const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(1,-1,2);scene.add(sun);
+const grid=new THREE.GridHelper(1000,24,0x385269,0x23394a);grid.rotation.x=Math.PI/2;grid.position.z=-.2;scene.add(grid);
+function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
+new ResizeObserver(()=>{camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}).observe(host);
+function dimensions(){return{height:num('height'),width:num('width'),depth:num('depth')}}
+function sliceCount(){
+  const w=num('width'), t=Math.max(0.5,num('thickness')), g=$('gapMode').value==='zero'?0:num('gap');
+  const packed=Math.max(2,Math.floor(w/Math.max(t+g,0.5)));
+  const f={very_low:0.30,low:0.50,medium:0.72,high:1.00}[$('quality')?$('quality').value:'medium']||0.68;
+  return Math.max(8,Math.min(packed,Math.round(packed*f)));
+}
+function updateSliceHint(){
+  const n=sliceCount();
+  if($('sliceCountHint'))$('sliceCountHint').textContent=`تعداد برش خودکار: ${n} قطعه (بر اساس عرض ${num('width').toFixed(1)} و ضخامت ${num('thickness').toFixed(2)})`;
+}
+
+function targetByAxis(){const d=dimensions(),result={};result[semanticAxes.height]=d.height;result[semanticAxes.width]=d.width;result[semanticAxes.depth]=d.depth;return result}
+function scaleModel(){if(!model||!original)return;const t=targetByAxis();model.scale.set(t.x/original.x,t.y/original.y,t.z/original.z);model.updateMatrixWorld(true);updatePlanes()}
+function fit(){if(!model)return;const b=new THREE.Box3().setFromObject(model),s=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3()),m=Math.max(s.x,s.y,s.z);controls.target.copy(c);camera.position.copy(c).add(new THREE.Vector3(m*1.35,-m*1.55,m*.9));camera.near=Math.max(.01,m/1000);camera.far=m*100;camera.updateProjectionMatrix();controls.update()}
+
+function useCurrentViewAsFront(){
+  if(!model){alert('اول مدل را باز کنید');return}
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+  // dominant axis of view = depth (wall normal)
+  const ax=Math.abs(dir.x),ay=Math.abs(dir.y),az=Math.abs(dir.z);
+  let depthAxis='x';
+  if(ay>=ax&&ay>=az)depthAxis='y';
+  else if(az>=ax&&az>=ay)depthAxis='z';
+  // horizontal in view = slice axis (cross of world-up Z and view dir)
+  const up=new THREE.Vector3(0,0,1);
+  const right=new THREE.Vector3().crossVectors(dir,up);
+  if(right.lengthSq()<1e-8){right.crossVectors(dir,new THREE.Vector3(0,1,0))}
+  right.normalize();
+  const rx=Math.abs(right.x),ry=Math.abs(right.y),rz=Math.abs(right.z);
+  let sliceAxis='x';
+  if(ry>=rx&&ry>=rz)sliceAxis='y';
+  else if(rz>=rx&&rz>=ry)sliceAxis='z';
+  if(sliceAxis===depthAxis){
+    // pick remaining axis
+    sliceAxis=['x','y','z'].find(a=>a!==depthAxis)||'x';
+  }
+  // map depth axis + sign to semantic backFace
+  // camera looks along dir toward the FRONT face of the model
+  const towardPos=dir[{x:0,y:1,z:2}[depthAxis]!==undefined?depthAxis:'x']>0;
+  // semanticAxes: height/width/depth roles
+  let face='back';
+  if(depthAxis===semanticAxes.depth){
+    // looking toward +depth means we see front (max) if depth grows forward
+    face=towardPos?'front':'back';
+  }else if(depthAxis===semanticAxes.width){
+    face=towardPos?'right':'left';
+  }else if(depthAxis===semanticAxes.height){
+    // top/bottom not in select - use left/right fallback via explicit axis
+    face=towardPos?'front':'back';
+  }else{
+    face=towardPos?'front':'back';
+  }
+  // Prefer explicit source faces for accuracy when not matching semantic depth
+  // Override select with best semantic match
+  $('backFace').value=['back','front','left','right'].includes(face)?face:'back';
+  $('sliceAxis').value=sliceAxis;
+  $('forceFlatBack').checked=true;
+  $('showBackPlane').checked=true;
+  $('showPlanes').checked=true;
+  updateAxisMeaning();
+  updatePlanes();
+  markSettingsChanged();
+  $('status').textContent='نما قفل شد: صفحه پشت پشت کار · برش عمود بر صفحه پشت · محور برش '+sliceAxis.toUpperCase();
+  $('previewState').textContent='اگر صفحه کهربایی پشت بدن نبود، کمی مدل را بچرخانید و دوباره «همین نما» را بزنید';
+}
+
+function setView(v){if(!model)return;const b=new THREE.Box3().setFromObject(model),s=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3()),m=Math.max(s.x,s.y,s.z)*2;if(v==='fit'){fit();return}const p={front:[0,-m,0],back:[0,m,0],left:[-m,0,0],right:[m,0,0],top:[0,0,m],iso:[m,-m,m*.75]}[v];camera.position.set(c.x+p[0],c.y+p[1],c.z+p[2]);controls.target.copy(c);controls.update()}
+function disposeGroup(g){while(g.children.length){const o=g.children.pop();o.geometry?.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material?.dispose()}}
+function updatePlanes(){
+  disposeGroup(planes);disposeGroup(backPlaneGroup);
+  if(!model){planes.visible=false;backPlaneGroup.visible=false;return}
+  const t=targetByAxis();
+  // --- slice planes (blue) ---
+  if($('showPlanes').checked){
+    planes.visible=true;
+    const axis=$('sliceAxis').value,count=sliceCount();
+    let span=t[axis]||t.x,min=-span/2;
+    const positions=finalPlanePositions&&finalPlanePositions.length?finalPlanePositions:Array.from({length:count},(_,i)=>min+(i+.5)*span/count);
+    const mat=new THREE.MeshBasicMaterial({color:0x3aa0ff,transparent:true,opacity:.22,side:THREE.DoubleSide,depthWrite:false});
+    const size=Math.max(t.x,t.y,t.z)*1.05;
+    for(const x of positions){
+      const g=new THREE.PlaneGeometry(size,size);
+      const m=new THREE.Mesh(g,mat.clone());
+      if(axis==='x'){m.rotation.y=Math.PI/2;m.position.x=x}
+      else if(axis==='y'){m.rotation.x=Math.PI/2;m.position.y=x}
+      else{m.position.z=x}
+      planes.add(m);
+    }
+  }else planes.visible=false;
+  // --- back mounting plane (amber) ---
+  if($('showBackPlane')&&$('showBackPlane').checked){
+    backPlaneGroup.visible=true;
+    const face=$('backFace').value, offset=num('backOffset');
+    // Map semantic face -> source axis via semanticAxes roles
+    // back/front use depth axis, left/right use width axis
+    let axisName, fromMin;
+    if(face==='back'||face==='front'){axisName=semanticAxes.depth;fromMin=(face==='back')}
+    else if(face==='left'||face==='right'){axisName=semanticAxes.width;fromMin=(face==='left')}
+    else{axisName=semanticAxes.depth;fromMin=true}
+    const span=t[axisName]||t.y;
+    // Plane position: face at ±span/2, then offset toward center if positive
+    let pos=fromMin?(-span/2+offset):(span/2-offset);
+    const sizeW=Math.max(t.x,t.y,t.z)*1.08;
+    const g=new THREE.PlaneGeometry(sizeW,sizeW);
+    const mat=new THREE.MeshBasicMaterial({color:0xf0a020,transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false});
+    const m=new THREE.Mesh(g,mat);
+    // grid helper on plane
+    const edges=new THREE.EdgesGeometry(g);
+    const line=new THREE.LineSegments(edges,new THREE.LineBasicMaterial({color:0xffc857}));
+    if(axisName==='x'){m.rotation.y=Math.PI/2;line.rotation.y=Math.PI/2;m.position.x=pos;line.position.x=pos}
+    else if(axisName==='y'){m.rotation.x=Math.PI/2;line.rotation.x=Math.PI/2;m.position.y=pos;line.position.y=pos}
+    else{m.position.z=pos;line.position.z=pos}
+    backPlaneGroup.add(m,line);
+  }else backPlaneGroup.visible=false;
+}
+function roleFa(role){return({height:'ارتفاع',width:'عرض',depth:'عمق'})[role]||role}
+function updateAxisMeaning(){
+  const byAxis={};for(const[role,axis] of Object.entries(semanticAxes))byAxis[axis]=role;
+  $('axisMeaning').textContent=Object.keys(byAxis).map(axis=>`${axis.toUpperCase()} = ${roleFa(byAxis[axis])}`).join('  |  ');
+  for(const option of $('sliceAxis').options)option.textContent=`محور ${option.value.toUpperCase()} — ${roleFa(byAxis[option.value])||'—'}`;
+}
+function updateConnectorInfo(){
+  const t=num('thickness'),s=num('slotLength'),w=num('minimumWeb'),sec=num('minSection'),tabs=Math.max(1,Math.floor(num('tabCount')));
+  $('connectorInfo').textContent=`مادگی: ${s.toFixed(2)} × ${t.toFixed(2)} میلی‌متر\nنری هم‌مرکز: ${(s+.25).toFixed(2)} × ${t.toFixed(2)} میلی‌متر\nحداقل مقطع: ${sec.toFixed(2)} میلی‌متر\nتعداد خار: ${tabs}`;
+}
+function markSettingsChanged(){if(currentJob){$('previewState').textContent='پیش‌نمایش قدیمی است';currentJob=null;$('exportBtn').disabled=true;finalPlanePositions=null}$('validation').textContent='تنظیمات تغییر کرده؛ دوباره «تولید نهایی» را بزنید.';scaleModel();updateConnectorInfo();updateSliceHint()}
+function showGeometry(geo){geo.computeVertexNormals();geo.computeBoundingBox();const size=geo.boundingBox.getSize(new THREE.Vector3());geo.center();if(model){scene.remove(model);model.geometry.dispose();model.material.dispose()}model=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xe5e8ea,roughness:.72,metalness:.01,side:THREE.DoubleSide}));scene.add(model);original={x:size.x,y:size.y,z:size.z};return size}
+function payload(final=true){return{model_id:modelId,token:currentToken,height:num('height'),width:num('width'),depth:num('depth'),slice_axis:$('sliceAxis').value,back_face:$('backFace').value,back_plane_offset:num('backOffset'),depth_direction:'forward',thickness:num('thickness'),connector_thickness:num('thickness'),female_slot_length:num('slotLength'),male_interference:0.25,minimum_web:num('minimumWeb'),tab_count:Math.max(1,Math.floor(num('tabCount'))),min_section_depth:num('minSection'),force_flat_back:$('forceFlatBack').checked,gap:$('gapMode').value==='zero'?0:num('gap'),quality:$('quality').value,count:sliceCount(),simplify_tolerance:.12,number_scale:0.55,crop_enabled:$('cropEnabled').checked,crop_width_min:Math.max(0,Math.min(1,num('cropWMin')/100)),crop_width_max:Math.max(0,Math.min(1,num('cropWMax')/100)),crop_height_min:Math.max(0,Math.min(1,num('cropHMin')/100)),crop_height_max:Math.max(0,Math.min(1,num('cropHMax')/100)),crop_depth_min:Math.max(0,Math.min(1,num('cropDMin')/100)),crop_depth_max:Math.max(0,Math.min(1,num('cropDMax')/100)),bold_enabled:$('boldEnabled').checked,bold_offset:Math.max(0,num('boldOffset')),wave_enabled:$('waveEnabled').checked,wave_amplitude:Math.max(0,num('waveAmp')),wave_wavelength:Math.max(5,num('waveLen')),wave_phase_deg:num('wavePhase'),wave_panel_count:Math.max(1,Math.floor(num('waveCount'))),wave_strip_width:Math.max(3,num('waveStrip')),wave_gap:Math.max(0,num('waveGap')),wave_placement:$('wavePlacement').value,wave_offset_y:num('waveOffY'),wave_offset_z:num('waveOffZ'),wave_height_min:Math.max(0,Math.min(1,num('waveHMin')/100)),wave_height_max:Math.max(0,Math.min(1,num('waveHMax')/100)),final}}
+const checkFa={'NO MIRROR':'بدون قرینه‌شدن ناخواسته','NO SCALE ERROR':'مقیاس صحیح','NO LOST PART':'تعداد مقاطع قابل‌استفاده کافی','NO LOST NUMBER':'همه شماره‌ها موجود','NUMBER OFF CUT':'شماره‌ها دور از خط برش','CORRECT PART ORDER':'ترتیب قطعات صحیح','ALL TABS':'همه قطعات خار دارند','CENTERED TAB SLOT':'مرکز خار و شیار هم‌مرکز','VALID BACK PANEL':'صفحه پشت معتبر','VALID DXF':'DXF معتبر'};
+async function openFileV4(file){
+  if(!file)return;
+  try{
+    $('status').textContent='در حال خواندن مدل…';currentJob=null;finalPlanePositions=null;$('exportBtn').disabled=true;
+    const buffer=await file.arrayBuffer(),loader=new STLLoader();
+    let size=showGeometry(loader.parse(buffer));
+    $('height').value=size.z.toFixed(3);$('width').value=size.x.toFixed(3);$('depth').value=size.y.toFixed(3);
+    scaleModel();fit();
+    const isolate=$('isolateSubject').checked?'1':'0',response=await fetch('/api/upload?name='+encodeURIComponent(file.name)+'&isolate='+isolate,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:buffer}),data=await response.json();
+    if(!response.ok)throw Error(data.error||'خطای ورود مدل');modelId=data.model_id;semanticAxes=data.semantic_axes;updateAxisMeaning();
+    if(data.isolation?.applied){const cleanResponse=await fetch(data.preview_url),cleanBuffer=await cleanResponse.arrayBuffer();size=showGeometry(loader.parse(cleanBuffer))}
+    originalSemantic={height:data.height,width:data.width,depth:data.depth};
+    $('height').value=data.height.toFixed(3);$('width').value=data.width.toFixed(3);$('depth').value=data.depth.toFixed(3);
+    // default slice axis = width
+    $('sliceAxis').value=semanticAxes.width||'x';
+    recommended={height:data.height,width:data.width,depth:data.depth,count:Math.max(2,Math.round(data.width/3))};
+    updateSliceHint();
+    scaleModel();fit();updatePlanes();
+    const iso=data.isolation||{};
+    $('validation').textContent='پس از بررسی جهت و محل صفحه‌ها، «تولید نهایی» را بزنید.';
+    $('status').textContent=iso.applied?'واترمارک جدا حذف شد؛ مدل آماده‌است.':'مدل و صفحه‌های برش آماده‌اند.';
+  }catch(error){$('status').textContent='خطا: '+error.message}
+}
+async function processModelV4(){
+  if(!modelId){$('status').textContent='ابتدا STL را باز کنید.';return}
+  // Keep model, camera, and all form values — only refresh slice planes after success.
+  const keptId=modelId;
+  currentToken=crypto.randomUUID();$('cancelBtn').disabled=false;$('finalBtn').disabled=true;$('exportBtn').disabled=true;
+  $('status').textContent='در حال برش لایه‌ای (Stacked Slices)… مدل و تنظیمات شما حفظ می‌شوند.';
+  try{
+    const response=await fetch('/api/process',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload(true))}),data=await response.json();
+    if(!response.ok)throw Error(data.error||'پردازش ناموفق بود');
+    if(!keptId||keptId!==modelId){/* user opened another file mid-run */return}
+    currentJob=data.job_id;finalPlanePositions=data.slice_positions||null;
+    const hasParts=Number(data.part_count||0)>0;
+    const validDxf=data.validation?Boolean(data.validation.ok):hasParts;
+    $('exportBtn').disabled=!hasParts;
+    $('showPlanes').checked=true;planes.visible=true;updatePlanes();
+    $('previewState').textContent=hasParts
+      ? `آماده: ${data.part_count} لایه از ${data.requested_part_count} · محور ${String(data.slice_axis_used||'').toUpperCase()} · می‌توانید خروجی بگیرید`
+      : 'لایهٔ کافی ساخته نشد';
+    if(data.wave_panels&&data.wave_panels.count){$('waveInfo').textContent=`فعال: ${data.wave_panels.count} نوار · دامنه ${Number(data.wave_panels.amplitude).toFixed(1)} · λ ${Number(data.wave_panels.wavelength).toFixed(1)} · فاز ${Number(data.wave_panels.phase_deg).toFixed(0)}° · ${data.wave_panels.placement}`;}else if($('waveInfo')){$('waveInfo').textContent=$('waveEnabled').checked?'موج فعال است ولی نواری ساخته نشد.':'موج خاموش — مدل اصلی بدون تغییر.';}
+if(data.back_panel){const b=data.back_panel;$('connectorInfo').textContent=`مادگی: ${b.female_slot_length.toFixed(2)} × ${b.connector_thickness.toFixed(2)} میلی‌متر\nنری هم‌مرکز: ${b.male_tab_length.toFixed(2)} × ${b.connector_thickness.toFixed(2)} میلی‌متر\nحداقل مقطع: ${(b.min_section_depth||0).toFixed(2)} میلی‌متر\nتعداد خار: ${b.tab_count||1}\nتعداد شیار: ${b.slots.length}`}
+    const lines=[];
+    lines.push(`✓ مدل همان فایل قبلی است — نیازی به بارگذاری دوباره نیست`);
+    lines.push(`✓ ${data.part_count} قطعه برش برای مونتاژ لایه‌ای`);
+    if(data.validation){
+      for(const [key,value] of Object.entries(data.validation.checks||{})) lines.push(`${value?'✓':'✕'} ${checkFa[key]||key}`);
+      for(const item of (data.validation.errors||[])) lines.push('• '+item);
+      for(const item of (data.validation.warnings||[])) lines.push('• '+item);
+    }
+    for(const item of (data.warnings||[])) lines.push('• '+item);
+    $('validation').textContent=lines.join('\n');
+    $('status').textContent=hasParts
+      ? (validDxf
+          ? `تولید تمام شد. مدل و تنظیمات سر جایشان هستند — فقط «خروجی DXF» را بزنید.`
+          : `برش انجام شد (${data.part_count} قطعه). می‌توانید DXF بگیرید یا تنظیمات را عوض کنید.`)
+      : 'لایهٔ قابل‌برش کافی نبود؛ جهت برش یا وضوح را عوض کنید (بدون باز کردن دوبارهٔ STL).';
+  }catch(error){
+    const msg=String(error.message||error);
+    $('status').textContent='خطا: '+msg;
+    // Do NOT clear modelId / geometry / form fields on error.
+    if(msg.includes('مدل')||msg.includes('STL')){
+      $('validation').textContent='اگر سرور ریست شده، فقط همان STL را دوباره باز کنید. ابعاد و گزینه‌های صفحه را از نو وارد نکنید مگر لازم باشد.';
+    }
+  }finally{$('cancelBtn').disabled=true;$('finalBtn').disabled=false;currentToken=null}
+}
+async function runRecommend(){
+  if(!modelId){$('recommendBox').textContent='ابتدا مدل را باز کنید.';return}
+  try{
+    const body={height:num('height'),width:num('width'),depth:num('depth'),count:sliceCount(),thickness:num('thickness'),gap:$('gapMode').value==='zero'?0:num('gap'),sheet_w:num('sheetW'),sheet_h:num('sheetH')};
+    const r=await fetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await r.json();
+    if(!r.ok)throw Error(data.error||'پیشنهاد ناموفق');
+    const lines=[];
+    if(data.nearest_count){const s=data.nearest_count;lines.push(`نزدیک به تعداد شما: ${s.count} قطعه — کیفیت نسبی ${s.quality.toFixed(1)} — ${s.note}`)}
+    if(data.more_detail){const s=data.more_detail;lines.push(`جزئیات بیشتر: ${s.count} قطعه در ابعاد فعلی — ${s.note}`)}
+    if(data.less_sheet){const s=data.less_sheet;lines.push(`مصرف ورق کمتر: مقیاس ${Math.round(s.scale*100)}٪ → ${s.height}×${s.width}×${s.depth} — ${s.note}`)}
+    recommended=data.more_detail||data.nearest_count;
+    $('recommendBox').textContent=lines.join('\n\n');
+    $('status').textContent='پیشنهاد آماده است؛ در صورت تمایل «اعمال پیشنهاد ابعاد» را بزنید.';
+  }catch(error){$('recommendBox').textContent='خطا: '+error.message}
+}
+$('openBtn').onclick=()=>$('file').click();$('file').onchange=event=>openFileV4(event.target.files[0]);$('finalBtn').onclick=processModelV4;
+$('cancelBtn').onclick=()=>currentToken&&fetch('/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:currentToken})});
+$('exportBtn').onclick=async()=>{if(!currentJob)return;try{$('status').textContent='در حال آماده‌سازی فایل خروجی…';const r=await fetch('/api/export?job='+currentJob);if(!r.ok){let msg='خطای خروجی DXF';try{const j=await r.json();if(j.error)msg=j.error}catch(_){}throw Error(msg)}const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ELEVEN_S1.1.10.0_DXF.zip';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);$('status').textContent='فایل DXF دانلود شد.'}catch(error){$('status').textContent='خطا: '+error.message}};
+$('applyRec').onclick=()=>{if(!recommended)return;$('height').value=recommended.height.toFixed(2);$('width').value=recommended.width.toFixed(2);$('depth').value=recommended.depth.toFixed(2);if(recommended.count)updateSliceHint();markSettingsChanged()};
+$('recommendBtn').onclick=runRecommend;
+let dimensionGuard=false;
+['height','width','depth'].forEach(id=>$(id).addEventListener('input',()=>{if(dimensionGuard||!originalSemantic){markSettingsChanged();return}if($('lock').checked){dimensionGuard=true;const factor=num(id)/originalSemantic[id];for(const role of ['height','width','depth'])$(role).value=(originalSemantic[role]*factor).toFixed(3);dimensionGuard=false}markSettingsChanged()}));
+['backFace','backOffset','thickness','slotLength','minimumWeb','minSection','tabCount','gapMode','gap','quality','forceFlatBack','cropEnabled','cropWMin','cropWMax','cropHMin','cropHMax','cropDMin','cropDMax','boldEnabled','boldOffset','waveEnabled','wavePlacement','waveAmp','waveLen','wavePhase','waveCount','waveStrip','waveGap','waveOffY','waveOffZ','waveHMin','waveHMax'].forEach(id=>$(id).addEventListener('change',()=>{updateConnectorInfo();markSettingsChanged()}));
+$('sliceAxis').onchange=()=>{updateAxisMeaning();markSettingsChanged()};
+$('showPlanes').onchange=()=>{$('previewState').textContent=$('showPlanes').checked?'صفحه‌های دقیق برش نمایش داده می‌شوند':'صفحه‌های برش خاموش';updatePlanes()};
+$('showBackPlane').onchange=()=>updatePlanes();
+$('useViewBtn').onclick=()=>useCurrentViewAsFront();
+$('backFace').addEventListener('input',()=>updatePlanes());
+$('backOffset').addEventListener('input',()=>updatePlanes());
+document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>setView(button.dataset.view));
+window.addEventListener('keydown',event=>{const map={'1':'front','2':'back','3':'left','4':'right','5':'top','0':'iso'};if(map[event.key])setView(map[event.key])});
+updateConnectorInfo();updateAxisMeaning();updateSliceHint();camera.position.set(400,-500,320);controls.target.set(0,0,0);
+</script>
+</body></html>
