@@ -1,0 +1,6 @@
+
+numpy
+trimesh
+ezdxf
+networkx
+scipy
